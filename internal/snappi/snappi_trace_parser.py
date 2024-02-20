@@ -15,6 +15,10 @@ event_names = [
      "FrameStartedLoading", "ResourceReceiveResponse"
 ]
 
+def devtools_filter_trace_event(event):
+    if event.get("name") in event_names:
+        return True
+    
 def filter_trace_events(trace_data, event_names):
     filtered_trace_data = {"traceEvents": []}
     event_names += ["navigationStart", "ImagePaint::Timing"]
@@ -31,9 +35,8 @@ def extract_navigation_start(trace_data):
             return event
     return None
 
-def snappi_parse_trace(trace_file_dict):
-    trace_data_filtered = filter_trace_events(trace_file_dict, event_names)
-    navigation_start_event = extract_navigation_start(trace_data_filtered)
+def snappi_parse_trace(snappi_filtered_events):
+    navigation_start_event = extract_navigation_start(snappi_filtered_events)
     rects = parse_rectangles(trace_data_filtered, navigation_start_event["ts"])
     result = generate_page_events(trace_data_filtered, rects, navigation_start_event, event_names)
     output = {

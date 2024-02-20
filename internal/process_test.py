@@ -595,11 +595,11 @@ class ProcessTest(object):
         from internal.snappi import snappi_trace_parser
         try:
             page_data = self.data['pageData']
-            metrics_file = os.path.join(self.task['dir'], self.prefix + '_trace.json.gz')
-            if os.path.isfile(metrics_file):
-                with gzip.open(metrics_file, GZIP_READ_TEXT) as f:
+            snappi_filtered_events = os.path.join(self.task['dir'], self.prefix + '_snappi_trace.json.gz')
+            if os.path.isfile(snappi_filtered_events):
+                with gzip.open(snappi_filtered_events, GZIP_READ_TEXT) as f:
                     trace_metrics = json.load(f)
-                    snappi_metrics = snappi_trace_parser.snappi_parse_trace(trace_metrics)
+                    snappi_metrics = snappi_trace_parser.snappi_parse_trace(snappi_filtered_events)
                     if snappi_metrics:
                         for key in snappi_metrics:
                             page_data[key] = snappi_metrics[key]

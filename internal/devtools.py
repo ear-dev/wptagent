@@ -61,6 +61,7 @@ class DevTools(object):
         self.last_activity = monotonic()
         self.dev_tools_file = None
         self.trace_file = None
+        self.snappi_trace_file = None
         self.trace_enabled = False
         self.requests = {}
         self.netlog_requests = {}
@@ -91,6 +92,7 @@ class DevTools(object):
         self.execution_contexts = {}
         self.execution_context = None
         self.trace_parser = None
+        self.snappi_trace_parser = None
         self.prepare()
         self.html_body = False
         self.all_bodies = False
@@ -2012,6 +2014,13 @@ class DevToolsClient(WebSocketClient):
                     self.trace_file.close()
                     self.trace_file = None
                     self.trace_done = True
+                    
+                # snappi
+                elif self.snappi_trace_file is not None and compare.find('"Tracing.tracingComplete') > -1:
+                    self.snappi_trace_file.write("\n]}")
+                    self.snappi_trace_file.close()
+                    self.snappi_trace_file = None
+                    self.trace_done = True
                 if message is not None:
                     self.messages.put(message)
         except Exception:
@@ -2059,6 +2068,12 @@ class DevToolsClient(WebSocketClient):
             self.trace_file.write("\n]}")
             self.trace_file.close()
             self.trace_file = None
+        # snappi
+        if self.snappi_trace_file is not None:
+            self.snappi_trace_file.write("\n]}")
+            self.snappi_trace_file.close()
+            self.snappi_trace_file = None
+            
         self.options = None
         self.job = None
         self.task = None
@@ -2085,6 +2100,7 @@ class DevToolsClient(WebSocketClient):
             elapsed = monotonic() - start
             logging.debug("Done processing the trace events: %0.3fs", elapsed)
         self.trace_parser = None
+        self.snappi_trace_parser = None
         self.path_base = None
         logging.debug("Trace event counts:")
         for cat in self.trace_event_counts:
@@ -2093,19 +2109,38 @@ class DevToolsClient(WebSocketClient):
 
     def process_trace_event(self, msg):
         """Process Tracing.* dev tools events"""
+        
         if 'params' in msg and 'value' in msg['params'] and len(msg['params']['value']):
             if self.trace_file is None and self.keep_timeline:
                 self.trace_file = gzip.open(self.path_base + '_trace.json.gz',
                                             GZIP_TEXT, compresslevel=7)
                 self.trace_file.write('{"traceEvents":[{}')
+                
             if self.trace_parser is None:
                 from internal.support.trace_parser import Trace
                 self.trace_parser = Trace()
+                
+            # snappi
+            if self.snappi_trace_file is None:
+                self.snappi_trace_file = gzip.open(self.path_base + '_snappi_trace.json.gz',
+                                                            GZIP_TEXT, compresslevel=7)
+                self.snappi_trace_file.write('{"traceEvents":[{}')
+                
+            if self.snappi_trace_parser is None:
+                from internal.snappi import snappi_trace_parser
+                self.snappi_trace_parser = snappi_trace_parser.devtools_filter_trace_event
+                
             # write out the trace events one-per-line but pull out any
             # devtools screenshots as separate files.
             trace_events = msg['params']['value']
             out = ''
+            snappi_out = ''
             for _, trace_event in enumerate(trace_events):
+                # collect the snappi trace events here
+                snappi_event = snappi_trace_parser.devtools_filter_trace_event(msg)
+                if snappi_event:
+                    snappi_out += ",\n" + json.dumps(trace_event)
+                    
                 self.processed_event_count += 1
                 keep_event = self.keep_timeline
                 process_event = True
@@ -2142,6 +2177,8 @@ class DevToolsClient(WebSocketClient):
                     out += ",\n" + json.dumps(trace_event)
             if self.trace_file is not None and len(out):
                 self.trace_file.write(out)
+            if self.snappi_trace_file is not None and len(snappi_out):
+                self.snappi_trace_file.write(snappi_out)
 
     def process_screenshot(self, trace_event):
         """Process an individual screenshot event"""

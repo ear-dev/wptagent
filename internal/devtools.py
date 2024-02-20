@@ -61,7 +61,6 @@ class DevTools(object):
         self.last_activity = monotonic()
         self.dev_tools_file = None
         self.trace_file = None
-        self.snappi_trace_file = None
         self.trace_enabled = False
         self.requests = {}
         self.netlog_requests = {}
@@ -92,7 +91,6 @@ class DevTools(object):
         self.execution_contexts = {}
         self.execution_context = None
         self.trace_parser = None
-        self.snappi_trace_parser = None
         self.prepare()
         self.html_body = False
         self.all_bodies = False
@@ -1964,6 +1962,7 @@ class DevToolsClient(WebSocketClient):
         self.connected = False
         self.messages = multiprocessing.JoinableQueue()
         self.trace_file = None
+        self.snappi_trace_file = None
         self.video_prefix = None
         self.trace_ts_start = None
         self.options = None
@@ -1974,6 +1973,7 @@ class DevToolsClient(WebSocketClient):
         self.video_viewport = None
         self.path_base = None
         self.trace_parser = None
+        self.snappi_trace_parser = None
         self.trace_event_counts = {}
         self.processed_event_count = 0
         self.last_data = None

@@ -2137,7 +2137,7 @@ class DevToolsClient(WebSocketClient):
             snappi_out = ''
             for _, trace_event in enumerate(trace_events):
                 # collect the snappi trace events here
-                snappi_event = self.snappi_trace_parser.devtools_filter_trace_event(msg)
+                snappi_event = self.snappi_trace_parser.devtools_filter_trace_event(msg, self.snappi_trace_parser.event_names)
                 if snappi_event:
                     snappi_out += ",\n" + json.dumps(trace_event)
                     

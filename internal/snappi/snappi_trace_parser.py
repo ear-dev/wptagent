@@ -15,7 +15,7 @@ event_names = [
      "FrameStartedLoading", "ResourceReceiveResponse"
 ]
 
-def devtools_filter_trace_event(event):
+def devtools_filter_trace_event(event, event_names):
     event_names += ["navigationStart", "ImagePaint::Timing"]
     if event.get("name") in event_names:
         return True

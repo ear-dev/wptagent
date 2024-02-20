@@ -599,7 +599,7 @@ class ProcessTest(object):
             if os.path.isfile(snappi_filtered_events):
                 with gzip.open(snappi_filtered_events, GZIP_READ_TEXT) as f:
                     trace_metrics = json.load(f)
-                    snappi_metrics = snappi_trace_parser.snappi_parse_trace(snappi_filtered_events)
+                    snappi_metrics = snappi_trace_parser.snappi_parse_trace(trace_metrics)
                     if snappi_metrics:
                         for key in snappi_metrics:
                             page_data[key] = snappi_metrics[key]
